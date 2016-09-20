@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Super simple IRC bot.
+#
+# Note: Requires the OpenBSD version of netcat!
+
+NICK="bitlair-space"
+CHANNEL="#bitlair-test"
+SERVER="irc.smurfnet.ch"
+INPORT="31337"
+
+loop="/tmp/irc-bot-loop"
+mkfifo "$loop"
+trap "rm -f $loop" INT TERM EXIT
+
+{
+echo "NICK $NICK"
+sleep 0.2
+echo "USER $NICK +i * :$0"
+sleep 6
+echo "JOIN $CHANNEL"
+
+# FIXME: Possible race condition between loop and stdin.
+tail -f "$loop" &
+
+nc -6 -k -lp "$INPORT" | while read line; do
+    echo "NOTICE $CHANNEL $line"
+done
+} | \
+nc "$SERVER" 6667 | while read message; do
+    case "$message" in
+        PING*) echo "PONG ${message#PING :}" | tee "$loop";;
+        ERROR*) echo "$message"; exit;;
+        *PRIVMSG*) echo "${message}" | sed -nr "s/^:([^!]+).*PRIVMSG[^:]+:(.*)/[$(date '+%R')] <\1> \2/p";;
+        *) echo "${message}";;
+    esac
+done

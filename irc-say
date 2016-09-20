@@ -8,4 +8,4 @@ if [ $# -eq 0 ]; then
     exit
 fi
 
-echo "$*" | nc "$HOST" "$PORT"
+echo "$*" | nc -w3 "$HOST" "$PORT"

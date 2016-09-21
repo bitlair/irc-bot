@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # Super simple IRC bot.
-#
-# Note: Requires the OpenBSD version of netcat!
 
 NICK="bitlair-space"
 CHANNEL="#bitlair-test"
@@ -23,13 +21,13 @@ echo "JOIN $CHANNEL"
 # FIXME: Possible race condition between loop and stdin.
 tail -f "$loop" &
 
-nc -6 -k -lp "$INPORT" | while read line; do
-    echo "NOTICE $CHANNEL $line"
+while true; do
+    echo "NOTICE $CHANNEL $(nc -lp "$INPORT")"
 done
 } | \
 nc "$SERVER" 6667 | while read message; do
     case "$message" in
-        PING*) echo "PONG ${message#PING :}" | tee "$loop";;
+        PING*) echo "PONG ${message#PING :}" > "$loop";;
         ERROR*) echo "$message"; exit;;
         *PRIVMSG*) echo "${message}" | sed -nr "s/^:([^!]+).*PRIVMSG[^:]+:(.*)/[$(date '+%R')] <\1> \2/p";;
         *) echo "${message}";;

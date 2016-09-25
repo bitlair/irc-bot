@@ -25,7 +25,7 @@ echo "JOIN $CHANNEL"
 tail -f "$loop" &
 
 while true; do
-    echo "NOTICE $CHANNEL $(nc -lp "$INPORT")"
+    echo "NOTICE $CHANNEL $(nc -lp "$INPORT" | tr '\n' ' ')"
 done
 } | \
 nc "$SERVER" 6667 | while read message; do

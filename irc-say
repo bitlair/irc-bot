@@ -3,6 +3,9 @@
 HOST=127.0.0.1
 PORT=31337
 
+set -eu
+set -o pipefail
+
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <message>..."
     exit

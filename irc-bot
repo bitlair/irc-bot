@@ -7,6 +7,9 @@ CHANNEL="#bitlair-test"
 SERVER="irc.smurfnet.ch"
 INPORT="31337"
 
+set -eu
+set -o pipefail
+
 loop="/tmp/irc-bot-loop"
 mkfifo "$loop"
 trap "rm -f $loop" INT TERM EXIT

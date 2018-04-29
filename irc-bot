@@ -2,13 +2,15 @@
 
 # Super simple IRC bot.
 
-NICK="bitlair-space"
-CHANNEL="#bitlair-test"
+NICK="bitlair"
+CHANNEL="#bitlair"
 SERVER="irc.smurfnet.ch"
 INPORT="31337"
 
 set -eu
 set -o pipefail
+
+trap 'kill $(jobs -p)' INT TERM EXIT
 
 loop="/tmp/irc-bot-loop"
 mkfifo "$loop"
@@ -25,7 +27,7 @@ echo "JOIN $CHANNEL"
 tail -f "$loop" &
 
 while true; do
-    echo "NOTICE $CHANNEL $(nc -lp "$INPORT" | tr '\n' ' ')"
+    echo "NOTICE $CHANNEL $(nc -lp "$INPORT" | tr -c -d '[:print:]')"
 done
 } | \
 nc "$SERVER" 6667 | while read message; do

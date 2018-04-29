@@ -6,6 +6,11 @@ NICK="bitlair"
 CHANNEL="#bitlair"
 SERVER="irc.smurfnet.ch"
 INPORT="31337"
+SPACESTATEFILE="/tmp/SPACESTATE"
+SETTOPICFILE="/tmp/SETTOPIC"
+
+touch $SPACESTATEFILE
+touch $SETTOPICFILE
 
 set -eu
 set -o pipefail
@@ -27,7 +32,18 @@ echo "JOIN $CHANNEL"
 tail -f "$loop" &
 
 while true; do
-    echo "NOTICE $CHANNEL $(nc -lp "$INPORT" | tr -c -d '[:print:]')"
+    input=$(nc -lp "$INPORT" | tr -c -d '[:print:]')
+    echo "NOTICE $CHANNEL $input"
+    if [ "$input" == "Bitlair is now closed" ]; then
+        echo "1" > $SETTOPICFILE
+        echo "closed" > $SPACESTATEFILE
+        echo "TOPIC $CHANNEL"
+    fi
+    if [ "$input" == "Bitlair is now open!" ]; then
+        echo "1" > $SETTOPICFILE
+        echo "OPEN" > $SPACESTATEFILE
+        echo "TOPIC $CHANNEL"
+    fi
 done
 } | \
 nc "$SERVER" 6667 | while read message; do
@@ -35,6 +51,17 @@ nc "$SERVER" 6667 | while read message; do
         PING*) echo "PONG ${message#PING :}" > "$loop";;
         ERROR*) echo "$message"; exit;;
         *PRIVMSG*) echo "${message}" | sed -nr "s/^:([^!]+).*PRIVMSG[^:]+:(.*)/[$(date '+%R')] <\1> \2/p";;
+        *332*)
+            TOPIC=$(echo "$message" | cut -d \: -f 3)
+            SPACESTATE=$(cat $SPACESTATEFILE)
+            SETTOPIC=$(cat $SETTOPICFILE)
+            if [ "$SETTOPIC" == "1" ]; then
+               rest=$(echo "$TOPIC" | cut -d \% -s -f2-)
+               echo "TOPIC $CHANNEL Hackerspace Bitlair is $SPACESTATE %$rest" > "$loop"
+               echo "0" > $SETTOPICFILE
+            fi
+            echo "TOPIC --> $TOPIC"
+            ;;
         *) echo "${message}";;
     esac
 done

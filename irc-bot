@@ -52,7 +52,7 @@ nc "$SERVER" 6667 | while read message; do
         ERROR*) echo "$message"; exit;;
         *PRIVMSG*) echo "${message}" | sed -nr "s/^:([^!]+).*PRIVMSG[^:]+:(.*)/[$(date '+%R')] <\1> \2/p";;
         *332*)
-            TOPIC=$(echo "$message" | cut -d \: -f 3)
+            TOPIC=$(echo "$message" | cut -d \: -f 3-)
             SPACESTATE=$(cat $SPACESTATEFILE)
             SETTOPIC=$(cat $SETTOPICFILE)
             if [ "$SETTOPIC" == "1" ]; then
